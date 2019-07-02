@@ -476,7 +476,7 @@
 
 
 		/**
-		 * Item data shortcode
+		 * Item shortcodes
 		 */
 		
 		/**
@@ -491,6 +491,7 @@
 			$key = key($parm);
 			if (empty($key)) return '';
 			unset($parm[$key]);
+			$text = '';
 
 			switch ($key) {
 				case 'id':
@@ -820,70 +821,84 @@
 
 		
 		/**
-		 * Categories
+		 * Categories shortcode
 		 */
-
-		function sc_cat_id($parm=null)
+		
+		/**
+		 * Shortode to return the cat data based on the given parm key
+		 *
+		 * @param array $parm
+		 * @return string
+		 */
+		function sc_cat_data($parm = null)
 		{
-			return $this->var['cat_id'];
-		}
+			if (empty($parm)) return '';
+			$key = key($parm);
+			if (empty($key)) return '';
+			unset($parm[$key]);
 
-		function sc_cat_name($parm=null)
-		{
-			return $this->tp->toHTML($this->var['cat_name'], true,'TITLE');
-		}
+			$text = '';
+			switch ($key) {
+				case 'id':
+					$text = $this->var['cat_id'];
+					break;
+					
+				case 'name':
+					$text = $this->tp->toHTML($this->var['cat_name'], true, 'TITLE');
+					break;
 
-		function sc_cat_sef($parm=null)
-		{
-			return $this->tp->toHTML($this->var['cat_sef'], true,'TITLE');
-		}
+				case 'sef':
+					$text = $this->tp->toHTML($this->var['cat_sef'], true, 'TITLE');
+					break;
 
-		function sc_cat_description($parm=null)
-		{
-			return $this->tp->toHTML($this->var['cat_description'], true, 'BODY');
-		}
+				case 'description':
+					$text = $this->tp->toHTML($this->var['cat_description'], true, 'BODY');
+					break;
 
-		function sc_cat_info($parm=null)
-		{
-			return $this->tp->toHTML($this->var['cat_info'], true,'BODY');
-		}
+				case 'info':
+					$text = $this->tp->toHTML($this->var['cat_info'], true,'BODY');
+					break;
 
-		function sc_cat_image($parm=0)
-		{
-			return $this->tp->thumbUrl($this->var['cat_image']);
-		}
+				case 'pic':
+					$text = $this->tp->thumbUrl($this->var['cat_image']);
+					break;
 
-		function sc_cat_pic($parm=null)
-		{
-			return $this->tp->toImage($this->var['cat_image']);
-		}
+				case 'url':
+					$urlData    = $this->var;
+					$route      = 'category';
+		
+					if ($this->var['cat_parent'] != 0) {
+						$urlData['subcat_name'] = $this->var['cat_name'];
+						$urlData['subcat_sef']  = $this->var['cat_sef'];
+						$urlData['subcat_id']   = $this->var['cat_id'];
+		
+						$pid    = $this->var['cat_parent'];
+						$parent = $this->categories[$pid];
+		
+						$urlData['cat_name']    = $parent['cat_name'];
+						$urlData['cat_id']      = $parent['cat_id'];
+						$urlData['cat_sef']     = $parent['cat_sef'];
+		
+						$route = 'subcategory';
+					}
+		
+					$text = e107::url('vstore', $route, $urlData);
+					break;
 
-		function sc_cat_url($parm=null)
-		{
+				case 'pic':
+					$text = $this->tp->thumbUrl($this->var['cat_image']);
+					break;
 
-			$urlData    = $this->var;
-			$route      = 'category';
+				case 'pic':
+					$text = $this->tp->thumbUrl($this->var['cat_image']);
+					break;
 
-			if($this->var['cat_parent'] != 0 )
-			{
-				$urlData['subcat_name'] = $this->var['cat_name'];
-				$urlData['subcat_sef']  = $this->var['cat_sef'];
-				$urlData['subcat_id']   = $this->var['cat_id'];
-
-				$pid    = $this->var['cat_parent'];
-				$parent = $this->categories[$pid];
-
-				$urlData['cat_name']    = $parent['cat_name'];
-				$urlData['cat_id']      = $parent['cat_id'];
-				$urlData['cat_sef']     = $parent['cat_sef'];
-
-				$route = 'subcategory';
 			}
 
-			//e107::getDebug()->log($urlData);
-
-			return e107::url('vstore',$route, $urlData);
+			return $text;
 		}
+
+
 
 
 		function sc_pref_howtoorder()

@@ -14,10 +14,10 @@ $VSTORE_TEMPLATE['cat']['item']   = '
 		{SETIMAGE: w=320&h=250&crop=1}
 		<div class="vstore-category-list col-sm-4 col-lg-4 col-md-4">
 			<div class="thumbnail">
-				<a href="{CAT_URL}">{CAT_PIC}</a>
+				<a href="{CAT_DATA: url}">{CAT_DATA: pic}</a>
 				<div class="caption text-center">
-					<h4><a href="{CAT_URL}">{CAT_NAME}</a></h4>
-					<p class="cat-description"><small>{CAT_DESCRIPTION}</small></p>
+					<h4><a href="{CAT_DATA: url}">{CAT_DATA: name}</a></h4>
+					<p class="cat-description"><small>{CAT_DATA: description}</small></p>
 					
 				</div>
 			</div>
@@ -32,7 +32,7 @@ $VSTORE_TEMPLATE['cat']['end']   = '
 /**
  * Product list
  */
-$VSTORE_TEMPLATE['list']['start']   = '<div class="row"><div class="col-md-12">{CAT_INFO}</div>';
+$VSTORE_TEMPLATE['list']['start']   = '<div class="row"><div class="col-md-12">{CAT_DATA: info}</div>';
 $VSTORE_TEMPLATE['list']['item']    =  '
 										{SETIMAGE: w=320&h=320&crop=1}
 										<div class="vstore-product-list col-sm-4 col-lg-4 col-md-4">
