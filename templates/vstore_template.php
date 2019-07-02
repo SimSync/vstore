@@ -38,16 +38,16 @@ $VSTORE_TEMPLATE['list']['item']    =  '
 										<div class="vstore-product-list col-sm-4 col-lg-4 col-md-4">
 							                        <div class="panel panel-default">
 								                        <div class="panel-body">
-								                            <a href="{ITEM_URL}">{ITEM_PIC}</a>
+								                            <a href="{ITEM_DATA: url}">{ITEM_DATA: pic}</a>
 								                            <div>
-								                                <h4 class="clearfix"><a href="{ITEM_URL}">{ITEM_NAME}</a><span class="pull-right"></span></h4>
-								                                <p class="item-description clearfix">{ITEM_DESCRIPTION: limit=150}
+								                                <h4 class="clearfix"><a href="{ITEM_DATA: url}">{ITEM_DATA: name}</a><span class="pull-right"></span></h4>
+								                                <p class="item-description clearfix">{ITEM_DATA: description&limit=150}
 																</p>
 
-																{ITEM_VARS}
+																{ITEM_DATA: vars}
 															   
 								                                <div class="row">
-								                                    <div class="col-md-5"><a class="item-price" href="{ITEM_URL}">{ITEM_PRICE}</a></div>
+								                                    <div class="col-md-5"><a class="item-price" href="{ITEM_DATA: url}">{ITEM_DATA: price}</a></div>
 								                                    <div class="col-md-7 text-right">{ITEM_ADDTOCART: class=btn btn-sm btn-success vstore-add&class0=btn btn-sm btn-default disabled vstore-add}</div>
 								                                </div>
 
@@ -82,13 +82,13 @@ $VSTORE_TEMPLATE['menu']['item'] =  '
 				<div class="thumbnail" style="height:auto;">
 					<div class="caption">
 						<div class="row">
-							<a href="{ITEM_URL}" class="col-xs-4">{ITEM_PIC}</a>
-							<h4 class="col-xs-8"><a href="{ITEM_URL}">{ITEM_NAME}</a></h4>
+							<a href="{ITEM_DATA: url}" class="col-xs-4">{ITEM_DATA: pic}</a>
+							<h4 class="col-xs-8"><a href="{ITEM_DATA: url}">{ITEM_DATA: name}</a></h4>
 						</div>
-						<!-- <p class="item-description">{ITEM_DESCRIPTION}</p> -->
+						<!-- <p class="item-description">{ITEM_DATA: description}</p> -->
 						<div class="row">
 							<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
-								<p class="lead">{ITEM_PRICE}</p>
+								<p class="lead">{ITEM_DATA: price}</p>
 							</div>
 							<div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
 								{ITEM_ADDTOCART: class=btn btn-sm btn-success vstore-add&class0=btn btn-sm btn-default disabled}
@@ -106,73 +106,73 @@ $VSTORE_TEMPLATE['item']['main']        = '{SETIMAGE: w=600&h=600}
 											<div class="vstore-product-view row">
 												<div class="col-md-6">
 													<div class="vstore-zoom thumbnail">
-														{ITEM_PIC: item=0&link=1}
+														{ITEM_DATA: pic&item=0&link=1}
 													</div>
 													<div class="row thumbnails">
-													{ITEM_PIC: w=200&h=200&crop=1&item=0&link=1&class=thumbnail img-responsive}
-													{ITEM_PIC: w=200&h=200&crop=1&item=1&link=1&class=thumbnail img-responsive}
-													{ITEM_PIC: w=200&h=200&crop=1&item=2&link=1&class=thumbnail img-responsive}
-													{ITEM_PIC: w=200&h=200&crop=1&item=3&link=1&class=thumbnail img-responsive}
-													{ITEM_PIC: w=200&h=200&crop=1&item=4&link=1&class=thumbnail img-responsive}
-													{ITEM_PIC: w=200&h=200&crop=1&item=5&link=1&class=thumbnail img-responsive}
-													{ITEM_PIC: w=200&h=200&crop=1&item=6&link=1&class=thumbnail img-responsive}
-													{ITEM_PIC: w=200&h=200&crop=1&item=7&link=1&class=thumbnail img-responsive}
+													{ITEM_DATA: pic&w=200&h=200&crop=1&item=0&link=1&class=thumbnail img-responsive}
+													{ITEM_DATA: pic&w=200&h=200&crop=1&item=1&link=1&class=thumbnail img-responsive}
+													{ITEM_DATA: pic&w=200&h=200&crop=1&item=2&link=1&class=thumbnail img-responsive}
+													{ITEM_DATA: pic&w=200&h=200&crop=1&item=3&link=1&class=thumbnail img-responsive}
+													{ITEM_DATA: pic&w=200&h=200&crop=1&item=4&link=1&class=thumbnail img-responsive}
+													{ITEM_DATA: pic&w=200&h=200&crop=1&item=5&link=1&class=thumbnail img-responsive}
+													{ITEM_DATA: pic&w=200&h=200&crop=1&item=6&link=1&class=thumbnail img-responsive}
+													{ITEM_DATA: pic&w=200&h=200&crop=1&item=7&link=1&class=thumbnail img-responsive}
 
 													</div>
 										        </div>
 										        <div class="col-md-6">
-										            <h3>{ITEM_NAME}</h3>
+										            <h3>{ITEM_DATA: name}</h3>
 
-													<p>{ITEM_DESCRIPTION}</p>
+													<p>{ITEM_DATA: description}</p>
 
-													<p>{ITEM_VARS}</p>
+													<p>{ITEM_DATA: vars}</p>
 												
-													<p>{ITEM_WEIGHT}</p>
+													<p>{ITEM_DATA: weight}</p>
 												
 													<p>
-										            Product Code: {ITEM_CODE}<br />
-										            Availability: {ITEM_AVAILABILITY}<br /><br />
+										            Product Code: {ITEM_DATA: code}<br />
+										            Availability: {ITEM_DATA: availability}<br /><br />
 										            <small class="text-muted">Price may change due to exchange rate.</small>
 										            </p>
 										            <div class="row">
-										                <div class="col-md-6 item-price"><h3>{ITEM_PRICE}</h3></div>
+										                <div class="col-md-6 item-price"><h3>{ITEM_DATA: price}</h3></div>
 										                <div class="col-md-6">{ITEM_ADDTOCART: class=btn btn-success vstore-add&class0=btn btn-sm btn-default disabled}</div>
 										            </div>
 												</div>
 									        </div>
 									        <hr />';
 
-$VSTORE_TEMPLATE['item']['details'] = '{ITEM_DETAILS}';
+$VSTORE_TEMPLATE['item']['details'] = '{ITEM_DATA: details}';
 $VSTORE_TEMPLATE['item']['videos'] = '
-					{ITEM_VIDEO=0}
-					{ITEM_VIDEO=1}
-					{ITEM_VIDEO=2}
-					{ITEM_VIDEO=3}
+					{ITEM_DATA: video&0}
+					{ITEM_DATA: video&1}
+					{ITEM_DATA: video&2}
+					{ITEM_DATA: video&3}
 			';
 
 
-$VSTORE_TEMPLATE['item']['files']       = '{ITEM_FILES}';
-$VSTORE_TEMPLATE['item']['reviews']     = '{ITEM_REVIEWS}';
-$VSTORE_TEMPLATE['item']['related']     = '{ITEM_RELATED}';
+$VSTORE_TEMPLATE['item']['files']       = '{ITEM_DATA: files}';
+$VSTORE_TEMPLATE['item']['reviews']     = '{ITEM_DATA: reviews}';
+$VSTORE_TEMPLATE['item']['related']     = '{ITEM_DATA: related}';
 $VSTORE_TEMPLATE['item']['howto']       = '{PREF_HOWTOORDER}';
 
-$VSTORE_WRAPPER['item']['ITEM_DETAILS'] = "<p>{---}</p>";
-$VSTORE_WRAPPER['item']['ITEM_FILES']   = "<p>{---}</p>";
-$VSTORE_WRAPPER['item']['ITEM_REVIEWS'] = "<p>{---}</p>";
-$VSTORE_WRAPPER['item']['ITEM_RELATED'] = "<p>{---}</p>";
-$VSTORE_WRAPPER['item']['PREF_HOWTOORDER']     = "<p>{---}</p>";
-$VSTORE_WRAPPER['item']['ITEM_VIDEO']   = "<div class='col-md-6'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: details'] = "<p>{---}</p>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: files']   = "<p>{---}</p>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: reviews'] = "<p>{---}</p>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: related'] = "<p>{---}</p>";
+$VSTORE_WRAPPER['item']['PREF_HOWTOORDER']  = "<p>{---}</p>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: video'] = "<div class='col-md-6'><p>{---}</p></div>";
 
 
 
-$VSTORE_WRAPPER['item']['ITEM_PIC: w=200&h=200&crop=1&item=0&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
-$VSTORE_WRAPPER['item']['ITEM_PIC: w=200&h=200&crop=1&item=1&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
-$VSTORE_WRAPPER['item']['ITEM_PIC: w=200&h=200&crop=1&item=2&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
-$VSTORE_WRAPPER['item']['ITEM_PIC: w=200&h=200&crop=1&item=3&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
-$VSTORE_WRAPPER['item']['ITEM_PIC: w=200&h=200&crop=1&item=4&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
-$VSTORE_WRAPPER['item']['ITEM_PIC: w=200&h=200&crop=1&item=5&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
-$VSTORE_WRAPPER['item']['ITEM_PIC: w=200&h=200&crop=1&item=6&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
-$VSTORE_WRAPPER['item']['ITEM_PIC: w=200&h=200&crop=1&item=7&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: pic&w=200&h=200&crop=1&item=0&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: pic&w=200&h=200&crop=1&item=1&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: pic&w=200&h=200&crop=1&item=2&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: pic&w=200&h=200&crop=1&item=3&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: pic&w=200&h=200&crop=1&item=4&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: pic&w=200&h=200&crop=1&item=5&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: pic&w=200&h=200&crop=1&item=6&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
+$VSTORE_WRAPPER['item']['ITEM_DATA: pic&w=200&h=200&crop=1&item=7&link=1&class=thumbnail img-responsive'] = "<div class='col-xs-3'><p>{---}</p></div>";
 
 
 /**
@@ -188,7 +188,7 @@ $VSTORE_TEMPLATE['orderconfirm']['main'] = '
 				{CONFIRM_FIELD: shipping_address}
 
 				<h4>Selected payment method</h4>
-				<p>{ORDER_GATEWAY_ICON} {ORDER_GATEWAY_TITLE}</p>
+				<p>{ORDER_DATA: order_gateway_icon} {ORDER_DATA: order_gateway}</p>
 			</div>
 
 			<div class="col-12 col-xs-12 col-sm-7 col-md-7">
@@ -202,8 +202,8 @@ $VSTORE_TEMPLATE['orderconfirm']['main'] = '
 		<hr />
 		<div class="row">
 			<div class="col-12 col-xs-12">
-				<a class="btn btn-default btn-secondary vstore-btn-back-confirm" href="{ORDER_CHECKOUT_URL}">&laquo; Back</a>
-				<button class="btn btn-primary vstore-btn-buy-now pull-right float-right" type="submit" name="mode" value="confirmed">{ORDER_GATEWAY_ICON: size=1x} Buy now!</button>
+				<a class="btn btn-default btn-secondary vstore-btn-back-confirm" href="{ORDER_DATA: checkout_url}">&laquo; Back</a>
+				<button class="btn btn-primary vstore-btn-buy-now pull-right float-right" type="submit" name="mode" value="confirmed">{ORDER_DATA: order_gateway_icon&size=1x} Buy now!</button>
 			</div>
 		</div>
 		';
@@ -381,12 +381,12 @@ $VSTORE_TEMPLATE['cart']['row'] = '
 		<td>
 			<div class="media">
 				<div class="media-left">
-					<a href="{ITEM_URL}">{ITEM_PIC: class=media-object}</a>
+					<a href="{ITEM_DATA: url}">{ITEM_DATA: pic&class=media-object}</a>
 				</div>
 				<div class="media-body">
-					<h4 class="media-heading"><a href="{ITEM_URL}">{ITEM_NAME}</a></h4>
-					<h5 class="media-heading"> by <a href="{ITEM_BRAND_URL}">{ITEM_BRAND}</a></h5>
-					{ITEM_VAR_STRING}
+					<h4 class="media-heading"><a href="{ITEM_DATA: url}">{ITEM_DATA: name}</a></h4>
+					<h5 class="media-heading"> by <a href="{ITEM_DATA: brand_url}">{ITEM_DATA: brand}</a></h5>
+					{ITEM_DATA: var_string}
 				</div>
 			</div>
 		</td>

@@ -79,15 +79,55 @@
 			return $text;
 		}
 
+		function setCategories($data)
+		{
+			$this->categories = $data;
+		}
+
+		function inStock()
+		{
+			$inStock = true;
+			$itemvars = vstore::filterItemVarsByType(varset($this->var['item_vars']), 1, true);
+			if(empty($itemvars)){
+				$inStock = empty($this->var['item_inventory']) ? false : ($this->var['item_inventory'] != 0);
+			}
+			else
+			{
+				//$itemvars = explode(',', $this->var['item_vars']);
+				$inv = e107::unserialize($this->var['item_vars_inventory']);
+				if (empty($this->var['item_vars_inventory']))
+				{
+					$inStock = false;
+				}
+				elseif(count($itemvars) == 1)
+				{
+					$varX = array_keys($inv)[0];
+					if (intval($inv[$varX]) == 0)
+					{
+						$inStock = false;
+					}
+				}
+				elseif(count($itemvars) == 2)
+				{
+					$varX = array_keys($inv)[0];
+					$varY = array_keys($inv[$varX])[0];
+					if (intval($inv[$varX][$varY]) == 0)
+					{
+						$inStock = false;
+					}
+				}
+			}
+			return $inStock;
+		}		
+
 		function sc_order_actions($parm=null)
 		{
 			if (!USER) return '';
-			$key = '';
+			$key = $class = '';
 
-			if (!empty($parm))
-			{
-				$key = array_keys($parm);
-				if ($key) $key = strtolower($key[0]);
+			if (!empty($parm)) {
+				$key = strtolower(key($parm));
+				$class = vartrue($parm['class']);
 			}
 
 			$cancellable = in_array($this->var['order_status'], array('N', 'P', 'H'));
@@ -96,24 +136,32 @@
 			{
 				if ($key == 'cancel' && $cancellable)
 				{
-					$text = sprintf('<a href="%s" class="btn btn-warning">%s</a>',
+					$class = empty($class) ? 'btn-warning' : $class;
+					$text = sprintf('<a href="%s" class="btn '.$class.'">%s</a>',
 						e107::url('vstore', 'dashboard_action', array('dash' => 'orders', 'action' => 'cancel', 'id' => $this->var['order_invoice_nr'])),
 						'Cancel order');
 				}
 				return $text;
 			}
 
+			$class = empty($class) ? '' : $class;
 			$actions = array(
-				sprintf('<a href="%s">%s</a>',
+				sprintf(
+					'<a class="%s" href="%s">%s</a>',
+					$class,
 					e107::url('vstore', 'dashboard_action', array('dash' => 'orders', 'action' => 'view', 'id' => $this->var['order_invoice_nr'])),
-					'View details')
+					'View details'
+				)
 			);
 
 			if ($cancellable)
 			{
-				$actions[] = sprintf('<a href="%s">%s</a>',
+				$actions[] = sprintf(
+					'<a class="%s" href="%s">%s</a>',
+					$class,
 					e107::url('vstore', 'dashboard_action', array('dash' => 'orders', 'action' => 'cancel', 'id' => $this->var['order_invoice_nr'])),
-					'Cancel order');
+					'Cancel order'
+				);
 			}
 
 			return e107::getForm()->button('order_actions', $actions, 'dropdown', 'Actions', array('class' => 'btn-default'));
@@ -122,9 +170,9 @@
 		function sc_order_data($parm = null)
 		{
 			if (empty($parm)) return '';
+			$key = key($parm);
+			if (empty($key)) return '';
 
-			$key = array_keys($parm);
-			if ($key) $key = strtolower($key[0]);
 			$area = '';
 
 			if (substr($key, 0, 5) == 'ship_' || substr($key, 0, 5) == 'cust_')
@@ -138,11 +186,14 @@
 			}
 
 
-			$frm = e107::getForm();
 			$text = '';
 
 			switch($key)
 			{
+				case 'checkout_url':
+					$text = e107::url('vstore', 'checkout', 'sef');
+					break;
+
 				case 'order_invoice_nr':
 					$text = vstore::formatInvoiceNr($this->var[$key]);
 					break;
@@ -157,6 +208,13 @@
 
 				case 'order_gateway':
 					$text = vstore::getGatewayTitle($this->var['order_pay_gateway']);
+					break;
+
+				case 'order_gateway_icon':
+					if (!isset($parm['size'])) {
+						$parm['size'] = '2x';
+					}
+					$text = vstore::getGatewayIcon($this->var['order_pay_gateway'], $parm);
 					break;
 
 				case 'order_ref':
@@ -268,11 +326,6 @@
 					break;
 			}
 			return $text;
-		}
-
-		function sc_order_date()
-		{
-			return $this->tp->toDate($this->var['order_date']);
 		}
 
 		function sc_order_items()
@@ -409,21 +462,6 @@
 
 		}
 
-		function sc_order_gateway_title($parm=null)
-		{
-			$text = vstore::getGatewayTitle($this->var['order_pay_gateway']);
-			return $text;
-		}
-
-		function sc_order_gateway_icon($parm=null)
-		{
-			if (!isset($parm['size'])) {
-				$parm['size'] = '2x';
-			}
-			$text = vstore::getGatewayIcon($this->var['order_pay_gateway'], $parm);
-			return $text;
-		}
-
 		function sc_sender_name()
 		{
 			$info = e107::pref('vstore', 'sender_name');
@@ -437,337 +475,353 @@
 		}
 
 
-		function sc_order_checkout_url()
+		/**
+		 * Item data shortcode
+		 */
+		
+		/**
+		 * Shortode to return the item data based on the given parm key
+		 *
+		 * @param array $parm
+		 * @return string
+		 */
+		function sc_item_data($parm = null)
 		{
-			return e107::url('vstore', 'checkout', 'sef');
-		}
+			if (empty($parm)) return '';
+			$key = key($parm);
+			if (empty($key)) return '';
+			unset($parm[$key]);
 
+			switch ($key) {
+				case 'id':
+					$text = $this->var['item_id'];
+					break;
 
+				case 'code':
+					$text = $this->var['item_code'];
+					break;
 
+				case 'name':
+					$text = $this->tp->toHTML($this->var['item_name'], true,'TITLE');
+					break;
 
+				case 'url':
+					$text = e107::url('vstore','product', $this->var);
+					break;
 
+				case 'var_string':
+					$text = $this->tp->toHTML($this->var['itemvarstring'], true, 'BODY');
+					break;
 
-		function setCategories($data)
-		{
-			$this->categories = $data;
-		}
+				case 'description':
+					$text = $this->var['item_desc'];
 
-		function inStock()
-		{
-			$inStock = true;
-			$itemvars = vstore::filterItemVarsByType(varset($this->var['item_vars']), 1, true);
-			if(empty($itemvars)){
-				$inStock = empty($this->var['item_inventory']) ? false : ($this->var['item_inventory'] != 0);
-			}
-			else
-			{
-				//$itemvars = explode(',', $this->var['item_vars']);
-				$inv = e107::unserialize($this->var['item_vars_inventory']);
-				if (empty($this->var['item_vars_inventory']))
-				{
-					$inStock = false;
-				}
-				elseif(count($itemvars) == 1)
-				{
-					$varX = array_keys($inv)[0];
-					if (intval($inv[$varX]) == 0)
+					if(!empty($parm['limit']) && !empty($text))
 					{
-						$inStock = false;
+						$text = $this->tp->text_truncate($text,$parm['limit']);
 					}
-				}
-				elseif(count($itemvars) == 2)
-				{
-					$varX = array_keys($inv)[0];
-					$varY = array_keys($inv[$varX])[0];
-					if (intval($inv[$varX][$varY]) == 0)
-					{
-						$inStock = false;
+		
+					$text = $this->tp->toHTML($text, false, 'BODY');
+					break;
+
+				case 'details':
+					$text = $this->tp->toHTML($this->var['item_details'], true,'BODY');
+					break;
+
+				case 'brand':
+					$text = $this->tp->toHTML($this->var['cat_name'], true, 'TITLE');
+					break;
+
+				case 'brand_url':
+					$text = e107::url('vstore', 'category', array('cat_sef' => $this->var['cat_sef']));
+					break;
+
+				case 'availability':
+					$text = "<span class='label label-success vstore-item-avail-".$this->var['item_id']."'>In Stock</span>";
+					if (!$this->inStock()) {
+						$text = "<span class='label label-danger vstore-item-avail-".$this->var['item_id']."'>".$this->captionOutOfStock."</span>";
 					}
-				}
-			}
-			return $inStock;
-		}
+					break;
 
-		function sc_item_id($parm=null)
-		{
-			return $this->var['item_id'];
-		}
+				case 'status':
+					$text = '<span class="text-danger"><strong>'.LAN_VSTORE_003.'</strong></span>'; // Out of stock
+					if($this->var['item_inventory'] != 0) {
+						$text = '<span class="text-success"><strong>'.LAN_VSTORE_002.'</strong></span>';
+					}
+					break;
 
-		function sc_item_code($parm=null)
-		{
-			return $this->var['item_code'];
-		}
+				case 'weight':
+					$weight = $this->var['item_weight'];
+					if ($weight <= 0) return '';
+					$text = 'Weight: ' . $weight . $this->vpref['weight_unit'];
+					break;
 
-		function sc_item_name($parm=null)
-		{
-			return $this->tp->toHTML($this->var['item_name'], true,'TITLE');
-		}
-
-		function sc_item_var_string($parm=null)
-		{
-			return $this->tp->toHTML($this->var['itemvarstring'], true,'BODY');
-		}
-
-		function sc_item_description($parm=null)
-		{
-
-			$text = $this->var['item_desc'];
-
-			if(!empty($parm['limit']) && !empty($text))
-			{
-				$text = $this->tp->text_truncate($text,$parm['limit']);
-			}
-
-			return $this->tp->toHTML($text, false, 'BODY');
-		}
-
-		function sc_item_details($parm=null)
-		{
-			return $this->tp->toHTML($this->var['item_details'], true,'BODY');
-		}
-
-
-		function sc_item_vars($parm=null)
-		{
-			$itemid = intval($this->var['item_id']);
-			$stock = empty($this->var['item_vars_inventory'])
-				? (isset($this->var['item_inventory']) ? $this->var['item_inventory'] : -1)
-				: e107::unserialize($this->var['item_vars_inventory']);
-
-			if (isset($this->var['item_vars']))
-			{
-				$vars = explode(',', $this->var['item_vars']);
-				foreach($vars as $varid)
-				{
-					e107::js('settings', array('vstore' => array(
-							'stock' => array("x{$itemid}-{$varid}" => vstore::isInventoryTrackingVar($varid)
-								? $stock
-								: (isset($this->var['item_inventory']) ? $this->var['item_inventory'] : -1)))
-						)
-					);
-				}
-			}
-
-			$baseprice = $this->tp->toNumber($this->var['item_price']);
-			$this->var['item_var_price'] = $baseprice;
-
-			if (isset($this->var['item_vars']))
-			{
-				$frm = e107::getForm();
-				$sql = e107::getDb();
-
-				if ($sql->select('vstore_items_vars', '*', 'FIND_IN_SET(item_var_id, "'.$this->var['item_vars'].'")'))
-				{
-					$text = '
-					<div id="vstore-item-vars-'.$itemid.'">';
-					while($row = $sql->fetch())
+				case 'price':
+					$itemid = intval($this->var['item_id']);
+					$baseprice = $price = $this->tp->toNumber($this->var['item_price']);
+					$varprice = $this->tp->toNumber($this->var['item_var_price']);
+		
+					if (!is_null($this->var['item_var_price']) && $varprice >= 0 && $varprice != $baseprice)
 					{
-						$attributes = e107::unserialize($row['item_var_attributes']);
-						$varid = intval($row['item_var_id']);
+						$price = $varprice;
+					}
+		
+					$text = ' <span class="vstore-item-price-'.$itemid.'">' . $this->format_amount($price) . '</span>
+						<input type="hidden" class="vstore-item-baseprice-'.$itemid.'" value="'.$baseprice.'"/>';
+					break;
 
-						$select = $frm->select_open(
-							'item_var[' . $itemid . '][' . $varid . ']',
-							array('class' => 'vstore-item-var tbox select form-control', 'data-id' => $itemid, 'data-item' => $varid, 'data-name' => varset($row['item_var_name'], 'foo'), 'required' => vartrue($row['item_var_compulsory']))
-						);
+				case 'reviews':
+					$rev = str_replace("\r", "" ,$this->var['item_reviews']);
+					$tmp = explode("\n\n",$rev);
+					if(empty($tmp)) return null;
+					foreach($tmp as $val) {
+						list($review, $by) = explode("--",$val);
+						$text .= "<blockquote>".$review."<small>".$by."</small></blockquote>";
+					}
+					break;
 
-						$selected = true;
-						foreach($attributes as $var)
-						{
-							$varname = $var['name'];
-							if($this->tp->toNumber($var['value']) > 0.0)
-							{
-								switch($var['operator'])
-								{
-									case '%':
-										if($selected)
-										{
-											$this->var['item_var_price'] *= ($this->tp->toNumber($var['value']) / 100.0);
-										}
-										$varname .= ' (+ ' . $this->tp->toNumber($var['value']) . '%)';
-										break;
-									case '+':
-										if($selected)
-										{
-											$this->var['item_var_price'] += $this->tp->toNumber($var['value']);
-										}
-										$varname .= ' (+ ' . $this->format_amount($var['value']) . ')';
-										break;
-									case '-':
-										if($selected)
-										{
-											$this->var['item_var_price'] -= $this->tp->toNumber($var['value']);
-										}
-										$varname .= ' (- ' . $this->format_amount($var['value']) . ')';
-										break;
-								}
+				case 'related':
+					if(empty($this->var['item_related'])) return '';
+
+					$row = e107::unserialize($this->var['item_related']);
+					list($table, $chapter) = explode("|", $row['src']);
+		
+					if($table == 'page_chapters') {
+						if($chp = e107::getDb()->retrieve(
+							'page',
+							'*',
+							'page_chapter ='.$chapter.' AND page_class IN ('.USERCLASS_LIST.') ORDER BY page_order',
+							true)
+						) {
+							$sc = e107::getScBatch('page',null,'cpage');
+	
+							$text = "<ul>";
+							foreach($chp as $row) {
+								$sc->setVars($row);
+								$text .= $this->tp->parseTemplate("<li>{CPAGELINK}</li>",true,$sc);
 							}
-
-							$select .= $frm->option(
-								$varname,
-								$frm->name2id($var['name']),
-								$selected,
-								array('data-op' => $var['operator'], 'data-val' => $this->tp->toNumber($var['value']), 'data-id' => $varid, 'data-item' => $itemid)
-							);
-							$selected = false;
-
+							$text .= "</ul>";
 						}
+		
+					}				
+					break;
 
-						$select .= $frm->select_close();
+				case 'pic':
+					$index = (!empty($parm['item'])) ? intval($parm['item']) : 0; 
+					$ival = e107::unserialize($this->var['item_pic']);
+		
+					$images = array();
+					foreach($ival as $i) {
+						if($this->tp->isImage($i['path'])) {
+							$images[] = $i['path'];
+						}
+					}
+		
+					$path = vartrue($images[$index]);
+					if (empty($path)) return '';
 
-						$text .= '
-						<div>
-							<label style="width: 100%;">' . $row['item_var_name'] . '
-							' . $select . '
-							</label>
-							<!-- fix #92: currency symbol used with product variations --> 
-							<span class="text-hide" id="vstore-currency-symbol">' . varset($this->vpref['amount_format'], 0) . $this->curSymbol . '</span>
-						</div>';
+					$pre = $post = "";
+					if(!empty($parm['link'])) {
+						$parm['scale']= '3x';
+						$link = $this->tp->thumbUrl($path, $parm);
+						unset($parm['scale'], $parm['link']);
+						$pre = "<a href='".$link."' data-standard='".$this->tp->thumbUrl($path, $parm)."'>";
+						$post = "</a>";		
+					}
+					$text = $pre. $this->tp->toImage($path, $parm) . $post;				
+					break;
+
+				case 'video':
+					if (empty($parm)) return '';
+					$index = intval(key($parm));
+					$ival = e107::unserialize($this->var['item_pic']);
+
+					$videos = array();
+					foreach($ival as $i) {
+						if(substr($i['path'],-8) == '.youtube') {
+							$videos[] = $i['path'];
+						}
 					}
 
-					$text .= '
-					</div>';
+					$path = vartrue($videos[$index]);
+					$text = $this->tp->toVideo($path);
+					break;
 
-					return $text;
-				}
-			}
-
-			return ''; // No item_vars set
-		}
-
-
-
-
-		function sc_item_reviews($parm=null)
-		{
-			// print_a($this->var['item_reviews']);
-			$rev = str_replace("\r","",$this->var['item_reviews']);
-
-			$tmp = explode("\n\n",$rev);
-
-			if(empty($tmp))
-			{
-				return null;
-			}
-
-			$text = '';
-
-			foreach($tmp as $val)
-			{
-				list($review, $by) = explode("--",$val);
-				$text .= "<blockquote>".$review."<small>".$by."</small></blockquote>";
-			}
-
-			return $text;
-			//return $this->tp->toHTML($this->var['item_reviews'], true, 'BODY');
-		}
-
-		function sc_item_related($parm=null)
-		{
-
-			if(empty($this->var['item_related']))
-			{
-				return false;
-			}
-			$row = e107::unserialize($this->var['item_related']);
-
-			//	return print_a($row, true);
-
-			list($table, $chapter) = explode("|", $row['src']);
-
-			$text = '';
-
-
-			if($table == 'page_chapters')
-			{
-				if($chp = e107::getDb()->retrieve('page', '*', 'page_chapter ='.$chapter.' AND page_class IN ('.USERCLASS_LIST.') ORDER BY page_order', true))
-				{
-					$sc = e107::getScBatch('page',null,'cpage');
-
-					$text = "<ul>";
-					foreach($chp as $row)
-					{
-						$sc->setVars($row);
-
-						$text .= $this->tp->parseTemplate("<li>{CPAGELINK}</li>",true,$sc);
-
-
+				case 'files':
+					if(empty($this->var['item_files'])){
+						return '';
 					}
+		
+					$ival = e107::unserialize($this->var['item_files']);
+					$id = array();
+					foreach($ival as $i) {
+						if(!empty($i['path']) && !empty($i['id'])) {
+							$id[] = intval($i['id']);
+						}
+					}
+		
+					if(empty($id)) {
+						return '';
+					}
+		
+		
+					$qry = 'SELECT media_id,media_name FROM #core_media WHERE media_id IN ('.implode(',',$id).') ORDER BY media_name ';
+					$files = e107::getDb()->retrieve($qry,true);
+		
+					$text = '<ul>';
+					foreach($files as $i) {
+						$bb = '[file='.$i['media_id'].']'.$i['media_name'].'[/file]';
+						$text .= '<li>'.$this->tp->toHTML($bb, true).'</li>';
+					}
+					$text .= '</ul>';
+					break;
 
-					$text .= "</ul>";
-				}
-
+				case 'vars':
+					$itemid = intval($this->var['item_id']);
+					$stock = empty($this->var['item_vars_inventory'])
+						? (isset($this->var['item_inventory']) ? $this->var['item_inventory'] : -1)
+						: e107::unserialize($this->var['item_vars_inventory']);
+		
+					if (isset($this->var['item_vars'])) {
+						$vars = explode(',', $this->var['item_vars']);
+						foreach($vars as $varid) {
+							e107::js('settings', array('vstore' => array(
+									'stock' => array("x{$itemid}-{$varid}" => vstore::isInventoryTrackingVar($varid)
+										? $stock
+										: (isset($this->var['item_inventory']) ? $this->var['item_inventory'] : -1)))
+								)
+							);
+						}
+					}
+		
+					$baseprice = $this->tp->toNumber($this->var['item_price']);
+					$this->var['item_var_price'] = $baseprice;
+		
+					if (isset($this->var['item_vars'])) {
+						$frm = e107::getForm();
+						$sql = e107::getDb();
+		
+						if ($sql->select('vstore_items_vars', '*', 'FIND_IN_SET(item_var_id, "'.$this->var['item_vars'].'")')) {
+							$text = '
+							<div id="vstore-item-vars-'.$itemid.'">';
+							while($row = $sql->fetch()) {
+								$attributes = e107::unserialize($row['item_var_attributes']);
+								$varid = intval($row['item_var_id']);
+		
+								$select = $frm->select_open(
+									'item_var[' . $itemid . '][' . $varid . ']',
+									array(
+										'class' => 'vstore-item-var tbox select form-control',
+										'data-id' => $itemid,
+										'data-item' => $varid,
+										'data-name' => varset($row['item_var_name'], 'foo'),
+										'required' => vartrue($row['item_var_compulsory'])
+									)
+								);
+		
+								$selected = true;
+								foreach($attributes as $var) {
+									$varname = $var['name'];
+									if($this->tp->toNumber($var['value']) > 0.0) {
+										switch($var['operator']) {
+											case '%':
+												if($selected) {
+													$this->var['item_var_price'] *= ($this->tp->toNumber($var['value']) / 100.0);
+												}
+												$varname .= ' (+ ' . $this->tp->toNumber($var['value']) . '%)';
+												break;
+											case '+':
+												if($selected) {
+													$this->var['item_var_price'] += $this->tp->toNumber($var['value']);
+												}
+												$varname .= ' (+ ' . $this->format_amount($var['value']) . ')';
+												break;
+											case '-':
+												if($selected) {
+													$this->var['item_var_price'] -= $this->tp->toNumber($var['value']);
+												}
+												$varname .= ' (- ' . $this->format_amount($var['value']) . ')';
+												break;
+										}
+									}
+		
+									$select .= $frm->option(
+										$varname,
+										$frm->name2id($var['name']),
+										$selected,
+										array(
+											'data-op' => $var['operator'],
+											'data-val' => $this->tp->toNumber($var['value']),
+											'data-id' => $varid,
+											'data-item' => $itemid
+										)
+									);
+									$selected = false;
+		
+								}
+		
+								$select .= $frm->select_close();
+		
+								$text .= '
+								<div>
+									<label style="width: 100%;">' . $row['item_var_name'] . '
+									' . $select . '
+									</label>
+									<!-- fix #92: currency symbol used with product variations --> 
+									<span class="text-hide" id="vstore-currency-symbol">' . varset($this->vpref['amount_format'], 0) . $this->curSymbol . '</span>
+								</div>';
+							}
+		
+							$text .= '
+							</div>';
+						}
+					}
+					break;
 			}
-
 			return $text;
 		}
 
-		function sc_item_brand($parm=null)
+		function sc_item_addtocart($parm=null)
 		{
-			return $this->tp->toHTML($this->var['cat_name'], true,'TITLE');
-		}
 
-		function sc_item_brand_url($parm=null)
-		{
-			return e107::url('vstore', 'category', array('cat_sef' => $this->var['cat_sef']));
-		}
+			$class = empty($parm['class']) ? 'btn btn-success vstore-add' : $parm['class'];
+			$classo = empty($parm['class0']) ? 'btn btn-default btn-secondary disabled vstore-add' : $parm['class0'];
+			$itemid = ' data-vstore-item="'.varset($this->var['item_id'], 0).'"';
 
-		function sc_item_pic($parm=null)
-		{
-			$index = (!empty($parm['item'])) ? intval($parm['item']) : 0; // intval($parm);
-			$ival = e107::unserialize($this->var['item_pic']);
-
-			$images = array();
-			foreach($ival as $i)
+			if (!in_array('vstore-add', explode(' ', $class)))
 			{
-				if($this->tp->isImage($i['path']))
+				$class .= ' vstore-add';
+			}
+			if (!in_array('vstore-add', explode(' ', $classo)))
+			{
+				$classo .= ' vstore-add';
+			}
+			$itemclass = ' vstore-add-item-'.varset($this->var['item_id'], 0);
+
+			$class .= $itemclass;
+			$classo .= $itemclass;
+
+			$inStock = $this->inStock();
+
+			if(!$inStock)
+			{
+				if(!empty($this->var['item_link'])) // external link - redirect to URL, info only. ie. catalog mode
 				{
-					$images[] = $i['path'];
+					return "<a href='".$this->var['item_link']."' target='_blank' class='".$class."'>".LAN_READ_MORE."</a>";
 				}
+
+				return "<a href='#' class='btn-out-of-stock ".$classo."' ".$itemid.">".$this->captionOutOfStock."</a>";
 			}
 
-			$path = vartrue($images[$index]);
-			$pre = "";
-			$post = "";
+			$label = LAN_VSTORE_001; // 'Add to cart';
 
-
-			if(!empty($parm['link']))
-			{
-				$parm['scale']= '3x';
-				$link = $this->tp->thumbUrl($path, $parm);
-				unset($parm['scale'],$parm['link']);
-				$pre = "<a href='".$link."' data-standard='".$this->tp->thumbUrl($path, $parm)."'>";
-				$post = "</a>";
-
-			}
-
-			return $pre. $this->tp->toImage($path,$parm) . $post;
+			return '<a class="'.$class.'" '.$itemid.' href="#">'.$this->tp->toGlyph('fa-shopping-cart').' '.$label.'</a>';
 		}
 
-		function sc_item_video($parm=0)
-		{
-			$index = intval($parm);
-			$ival = e107::unserialize($this->var['item_pic']);
-
-			$videos = array();
-			foreach($ival as $i)
-			{
-				if(substr($i['path'],-8) == '.youtube')
-				{
-					$videos[] = $i['path'];
-				}
-			}
-
-			$path = vartrue($videos[$index]);
-			return $this->tp->toVideo($path);
-
-		}
-
-
-
-
-
-
-		// Categories
+		
+		/**
+		 * Categories
+		 */
 
 		function sc_cat_id($parm=null)
 		{
@@ -837,142 +891,13 @@
 			return $this->tp->toHTML($this->vpref['howtoorder'],true,'BODY');
 		}
 
-		/**
-		 * Creates download links to the "attached" media files
-		 * This are NOT the purchased files to download!
-		 * Just "some" files which will be shown on the product page
-		 *
-		 * @param integer $parm
-		 * @return string
-		 */
-		function sc_item_files($parm=0)
-		{
-
-			if(empty($this->var['item_files']))
-			{
-				return null;
-			}
-
-			$ival = e107::unserialize($this->var['item_files']);
-
-			$id = array();
-
-			foreach($ival as $i)
-			{
-				if(!empty($i['path']) && !empty($i['id']))
-				{
-					$id[] = intval($i['id']);
-				}
-			}
-
-			if(empty($id))
-			{
-				return null;
-			}
-
-
-			$qry = 'SELECT media_id,media_name FROM #core_media WHERE media_id IN ('.implode(',',$id).') ORDER BY media_name ';
-			$files = e107::getDb()->retrieve($qry,true);
-
-			$text = '<ul>';
-			foreach($files as $i)
-			{
-				$bb = '[file='.$i['media_id'].']'.$i['media_name'].'[/file]';
-				$text .= '<li>'.$this->tp->toHTML($bb, true).'</li>';
-			}
-			$text .= '</ul>';
-
-			return $text;
-		}
-
-
-		function sc_item_price($parm=null)
-		{
-			$itemid = intval($this->var['item_id']);
-			$baseprice = $price = $this->tp->toNumber($this->var['item_price']);
-			$varprice = $this->tp->toNumber($this->var['item_var_price']);
-
-			if (!is_null($this->var['item_var_price']) && $varprice >= 0 && $varprice != $baseprice)
-			{
-				$price = $varprice;
-			}
-
-			return ' <span class="vstore-item-price-'.$itemid.'">'.$this->format_amount($price).'</span><input type="hidden" class="vstore-item-baseprice-'.$itemid.'" value="'.$baseprice.'"/>';
-		}
-
-		function sc_item_weight($parm=null)
-		{
-			$weight = $this->var['item_weight'];
-			if ($weight <= 0) return '';
-			return 'Weight: ' . $weight . $this->vpref['weight_unit'];
-		}
-
-
-		function sc_item_addtocart($parm=null)
-		{
-
-			$class = empty($parm['class']) ? 'btn btn-success vstore-add' : $parm['class'];
-			$classo = empty($parm['class0']) ? 'btn btn-default btn-secondary disabled vstore-add' : $parm['class0'];
-			$itemid = ' data-vstore-item="'.varset($this->var['item_id'], 0).'"';
-
-			if (!in_array('vstore-add', explode(' ', $class)))
-			{
-				$class .= ' vstore-add';
-			}
-			if (!in_array('vstore-add', explode(' ', $classo)))
-			{
-				$classo .= ' vstore-add';
-			}
-			$itemclass = ' vstore-add-item-'.varset($this->var['item_id'], 0);
-
-			$class .= $itemclass;
-			$classo .= $itemclass;
-
-			$inStock = $this->inStock();
-
-			if(!$inStock)
-			{
-				if(!empty($this->var['item_link'])) // external link - redirect to URL, info only. ie. catalog mode
-				{
-					return "<a href='".$this->var['item_link']."' target='_blank' class='".$class."'>".LAN_READ_MORE."</a>";
-				}
-
-				return "<a href='#' class='btn-out-of-stock ".$classo."' ".$itemid.">".$this->captionOutOfStock."</a>";
-			}
-
-			$label = LAN_VSTORE_001; // 'Add to cart';
-
-			return '<a class="'.$class.'" '.$itemid.' href="#">'.$this->tp->toGlyph('fa-shopping-cart').' '.$label.'</a>';
-		}
-
-
-		function sc_item_status($parm=null)
-		{
-			if($this->var['item_inventory'] != 0)
-			{
-				return '<span class="text-success"><strong>'.LAN_VSTORE_002.'</strong></span>';
-			}
-
-			return '<span class="text-danger"><strong>'.LAN_VSTORE_003.'</strong></span>'; // Out of stock
-		}
-
-		function sc_item_url($parm=null)
-		{
-			if(!empty($this->var['item_link']))
-			{
-			//	return $this->var['item_link'];
-			}
-
-			return e107::url('vstore','product', $this->var);
-		}
-
 
 		function sc_shipping_field($parm = null)
 		{
 			if (empty($parm)) return '';
+			$key = key($parm);
+			if (empty($key)) return '';
 
-			$key = array_keys($parm);
-			if ($key) $key = $key[0];
 
 			$frm = e107::getForm();
 			$text = '';
@@ -1028,9 +953,8 @@
 		function sc_customer_field($parm = null)
 		{
 			if (empty($parm)) return '';
-
-			$key = array_keys($parm);
-			if ($key) $key = $key[0];
+			$key = key($parm);
+			if (empty($key)) return '';
 
 			$frm = e107::getForm();
 			$text = '';
@@ -1090,9 +1014,8 @@
 		function sc_confirm_field($parm = null)
 		{
 			if (empty($parm)) return '';
-
-			$key = array_keys($parm);
-			if ($key) $key = $key[0];
+			$key = key($parm);
+			if (empty($key)) return '';
 
 			$frm = e107::getForm();
 			$text = '';
@@ -1142,9 +1065,9 @@
 		function sc_confirm_data($parm = null)
 		{
 			if (empty($parm)) return '';
+			$key = key($parm);
+			if (empty($key)) return '';
 
-			$key = array_keys($parm);
-			if ($key) $key = $key[0];
 
 			$text = '';
 
@@ -1272,8 +1195,9 @@
 		function sc_cart_data($parm = null)
 		{
 			if (empty($parm)) return '';
-			$key = array_keys($parm);
-			if ($key) $key = $key[0];
+			$key = key($parm);
+			if (empty($key)) return '';
+
 			$text = '';
 			switch($key)
 			{
@@ -1468,18 +1392,6 @@
 			}
 		}
 
-
-		function sc_item_availability()
-		{
-			if (!$this->inStock())
-			{
-				return "<span class='label label-danger vstore-item-avail-".$this->var['item_id']."'>".$this->captionOutOfStock."</span>";
-			}
-
-			return "<span class='label label-success vstore-item-avail-".$this->var['item_id']."'>In Stock</span>";
-		}
-
-
 		function sc_cart_taxtotal($parm=null)
 		{
 			if ($this->var['is_business'] && !$this->var['is_local'])
@@ -1526,9 +1438,8 @@
 		function sc_invoice_data($parm = null)
 		{
 			if (empty($parm)) return '';
-
-			$key = array_keys($parm);
-			if ($key) $key = $key[0];
+			$key = key($parm);
+			if (empty($key)) return '';
 
 			$frm = e107::getForm();
 			$text = '';
@@ -1708,9 +1619,9 @@
 		function sc_dashboard($parm = null)
 		{
 			if (empty($parm)) return '';
-
 			$key = key($parm);
 			if (empty($key)) return '';
+
 
 			switch($key)
 			{
